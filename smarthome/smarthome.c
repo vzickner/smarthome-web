@@ -3,7 +3,8 @@
 int main(int argc, char **argv) {
 	serialCommunicationInit(deviceName, baudRate);
 
-	setAeration(atoi(argv[1]));
+	//setAeration(atoi(argv[1]));
+	printf("Test: %d\n", getAeration());
 
 	serialCommunicationClose();
 }
@@ -94,10 +95,15 @@ int serialCommunication(struct symbol *command, int maxRestarts, char *additiona
 		}
 	} while(c->hasNextSymbol == 1);
 
-	if (error == 1 && maxRestarts > 0) {
-		pdebug("\n\nRestart:\n");
-		return serialCommunication(command, (maxRestarts-1), additionalReceive, maxAdditionalReceive);
+	if (error == 1) {
+		if (maxRestarts > 0) {
+			pdebug("\n\nRestart:\n");
+			return serialCommunication(command, (maxRestarts-1), additionalReceive, maxAdditionalReceive);
+		} else {
+			return 1;
+		}
 	}
+	return 0;
 }
 
 int setAeration(int aeration) {
@@ -109,8 +115,26 @@ int setAeration(int aeration) {
 	writingAeration.nextSymbol = &setModeWriting;
 	setModeWriting.nextSymbol = &writeAeration;
 
-	serialCommunication(&writingAeration, 10, 0, 0);
+	return serialCommunication(&writingAeration, 10, 0, 0);
 }
 
 int getAeration() {
+	int resultCommunication = 0;
+	char readedResult[] = { 0x00, 0xFF };
+
+	struct symbol readingAeration	= { .send = 0x00, .expectedResult = 0xFF, .additionalReceiveCount = 0, .hasNextSymbol = 1 };
+	struct symbol setModeReading	= { .send = 0x02, .expectedResult = 0x00, .additionalReceiveCount = 2, .hasNextSymbol = 0 };
+	readingAeration.nextSymbol = &setModeReading;
+
+	resultCommunication = serialCommunication(&readingAeration, 10, readedResult, 2);
+
+	if (resultCommunication == 0) {
+		if (readedResult[0] != ~readedResult[1]) {
+			return getAeration();
+		}
+        
+		return readedResult[0];
+	} else {
+		return -1;
+	}
 }
