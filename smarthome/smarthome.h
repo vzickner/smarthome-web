@@ -19,7 +19,7 @@ struct symbol {
 };
 
 int serial;
-int debugEnabled = 1;
+int debugEnabled = 0;
 char debug[DEBUG_BUFFER_SIZE];
 char deviceName[] = "/dev/ttyUSB0";
 int baudRate = 38400;
