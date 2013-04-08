@@ -1,5 +1,5 @@
 <?php
-$device = "/dev/ttyS0";
+$device = "/dev/ttyAMA0";
 
 function execute($command) {
 	return exec($command);

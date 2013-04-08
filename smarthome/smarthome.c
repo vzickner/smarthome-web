@@ -104,7 +104,7 @@ int pdebug(char *string) {
 int serialCommunicationInit(char *device, int baud, int stty) {
 	if (stty == 1) {
 		char sttyCmd[150];
-		snprintf(sttyCmd, 150, "stty -F %s -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke -opost -onlcr ignbrk -brkint -icrnl -imaxbel %d",
+		snprintf(sttyCmd, 150, "stty -F %s -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke -opost -onlcr ignbrk -brkint -icrnl -imaxbel cs8 %d",
 						device, baud);
 		pdebug(sttyCmd);
 		pdebug("\n");
@@ -173,7 +173,7 @@ int serialCommunication(struct symbol *command, int maxRestarts, char *additiona
 		snprintf(debug, DEBUG_BUFFER_SIZE, "Send: %02x, Expected: %02x, Result: %02x\n", c->send, c->expectedResult, resultCommand);
 		pdebug(debug);
 
-		if (c->expectedResult != resultCommand) {
+		if ((c->expectedResult & 0x7F) != (resultCommand & 0x7F)) {
 			pdebug("Read not expected result.\n");
 			error = 1;
 			break;
@@ -214,7 +214,7 @@ int getAeration() {
 	resultCommunication = serialCommunication(&readingAeration, 10, readedResult, 2);
 
 	if (resultCommunication == 0) {
-		if (readedResult[0] != ~readedResult[1]) {
+		if ((0x7F & readedResult[0]) != (0x7F & ~readedResult[1])) {
 			return getAeration();
 		}
         
