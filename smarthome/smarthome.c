@@ -1,12 +1,95 @@
 #include "smarthome.h"
 
 int main(int argc, char **argv) {
-	serialCommunicationInit(deviceName, baudRate);
+	int opt;
+	int setValue = 0;
+	int stty = 1;
+	char *device = deviceName;
+	int action = ACTION_NO;
+	int mode = MODE_READ;
+	int result = 0;
 
-	//setAeration(atoi(argv[1]));
-	printf("Test: %d\n", getAeration());
+	while ((opt = getopt(argc, argv, "dt:b:a:rw:h")) != -1) {
+		switch (opt) {
+		case 's':
+			stty = 0;
+			break;
+		case 'd':
+			debugEnabled = 1;
+			break;
+		case 't':
+			device = optarg;
+			break;
+		case 'b':
+			baudRate = atoi(optarg);
+			break;
+		case 'a':
+			switch (optarg[0]) {
+			case 'a':
+				action = ACTION_AERATION;
+				break;
+			default:
+				action = ACTION_NO;
+				break;
+			}
+			break;
+		case 'r':
+			mode = MODE_READ;
+			break;
+		case 'w':
+			mode = MODE_WRITE;
+			setValue = atoi(optarg);
+			break;
+		case 'h':
+			outputHelp(argv[0]);
+			exit(EXIT_SUCCESS);
+		default: /* '?' */
+			outputHelp(argv[0]);
+			exit(EXIT_FAILURE);
+		}
+	}
 
-	serialCommunicationClose();
+	switch (action) {
+	case ACTION_AERATION:
+		serialCommunicationInit(device, baudRate, stty);
+
+		switch (mode) {
+		case MODE_READ:
+			result = getAeration();
+			printf("%d\n", result);
+			break;
+		case MODE_WRITE:
+			result = setAeration(setValue);
+			break;
+		}
+
+		serialCommunicationClose();
+		if (result >= 0) {
+			exit(EXIT_SUCCESS);
+		} else {
+			exit(EXIT_FAILURE);
+		}
+		break;
+	default:
+		outputHelp(argv[0]);
+		exit(EXIT_FAILURE);
+	}
+}
+
+int outputHelp(char *name) {
+	fprintf(stderr, "Usage: %s -a action\n", name);
+	fprintf(stderr, "\n\nArguments:\n");
+	fprintf(stderr, "  -h		Show this help\n");
+	fprintf(stderr, "  -d		Enable debugging\n");
+	fprintf(stderr, "  -s		Disable set of stty command\n");
+	fprintf(stderr, "  -t device	Name of device to use for communication\n");
+	fprintf(stderr, "  -b baud	Baud rate for communication\n");
+	fprintf(stderr, "  -a action	Set the action\n");
+	fprintf(stderr, "  -r		Use read as mode (default)\n");
+	fprintf(stderr, "  -w val	Write mode with value (numeric)\n");
+	fprintf(stderr, "\n\nPossible actions:\n");
+	fprintf(stderr, "  a		Read/write acceleration level\n");
+	return 0;
 }
 
 int pdebug(char *string) {
@@ -18,13 +101,15 @@ int pdebug(char *string) {
 #endif
 }
 
-int serialCommunicationInit(char *device, int baud) {
-	char sttyCmd[150];
-	snprintf(sttyCmd, 150, "stty -F %s -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke -opost -onlcr ignbrk -brkint -icrnl -imaxbel %d",
-					device, baud);
-	pdebug(sttyCmd);
-	pdebug("\n");
-	system(sttyCmd);
+int serialCommunicationInit(char *device, int baud, int stty) {
+	if (stty == 1) {
+		char sttyCmd[150];
+		snprintf(sttyCmd, 150, "stty -F %s -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke -opost -onlcr ignbrk -brkint -icrnl -imaxbel %d",
+						device, baud);
+		pdebug(sttyCmd);
+		pdebug("\n");
+		system(sttyCmd);
+	}
 	serial = open(device, O_RDWR | O_NONBLOCK);
 	return 0;
 }
