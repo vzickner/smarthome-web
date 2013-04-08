@@ -1,7 +1,7 @@
 #include "smarthome.h"
 
 int main(int argc, char **argv) {
-	serialCommunicationInit();
+	serialCommunicationInit("/dev/ttyUSB0", 38400);
 
 	setAeration(atoi(argv[1]));
 
@@ -17,9 +17,14 @@ int pdebug(char *string) {
 #endif
 }
 
-int serialCommunicationInit() {
-	system("stty -F /dev/ttyUSB0 -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke -opost -onlcr ignbrk -brkint -icrnl -imaxbel 38400");
-	serial = open("/dev/ttyUSB0", O_RDWR | O_NONBLOCK);
+int serialCommunicationInit(char *device, int baud) {
+	char sttyCmd[150];
+	snprintf(sttyCmd, 150, "stty -F %s -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke -opost -onlcr ignbrk -brkint -icrnl -imaxbel %d",
+					device, baud);
+	pdebug(sttyCmd);
+	pdebug("\n");
+	system(sttyCmd);
+	serial = open(device, O_RDWR | O_NONBLOCK);
 	return 0;
 }
 
