@@ -28,7 +28,7 @@ int serialCommunicationClose() {
 	return 0;
 }
 
-int serialCommunication(struct symbol *command, int maxRestarts) {
+int serialCommunication(struct symbol *command, int maxRestarts, char *additionalResult) {
 	int error = 0;
 	struct symbol *c = command;
 	int first = 0;
@@ -45,16 +45,26 @@ int serialCommunication(struct symbol *command, int maxRestarts) {
 		pdebug("Write: ");
 		ssize_t res = write(serial, &send, 1);
 
-		snprintf(debug, 50, "%02x with result %d\n", send, res);
+		snprintf(debug, DEBUG_BUFFER_SIZE, "%02x with result %d\n", send, res);
 		pdebug(debug);
+		if (res != 1) {
+			pdebug("Write Error.");
+			error = 1;
+			break;
+		}
 
 		resultRead = -1;
 		pdebug("Read: ");
 		for (i = 0; i < 100 && resultRead != 1; i++) {
 			resultRead = read(serial, &result, 1);
-			snprintf(debug, 50, "(%02x,%d) ", result, resultRead);
+			snprintf(debug, DEBUG_BUFFER_SIZE, "(%02x,%d) ", result, resultRead);
 			pdebug(debug);
 			usleep(100);
+		}
+		if (resultRead != 1) {
+			pdebug("Read Error.");
+			error = 1;
+			break;
 		}
 		pdebug("\n");
 		result = result & 0xFF;
@@ -63,7 +73,7 @@ int serialCommunication(struct symbol *command, int maxRestarts) {
 		pdebug(debug);
 
 		if (c->expectedResult != result) {
-			pdebug("ERROR!\n");
+			pdebug("Read not expected result.\n");
 			error = 1;
 			break;
 		}
@@ -71,7 +81,7 @@ int serialCommunication(struct symbol *command, int maxRestarts) {
 
 	if (error == 1 && maxRestarts > 0) {
 		pdebug("\n\nRestart:\n");
-		return serialCommunication(command, (maxRestarts-1));
+		return serialCommunication(command, (maxRestarts-1), additionalResult);
 	}
 }
 
@@ -84,7 +94,7 @@ int setAeration(int aeration) {
 	writingAeration.nextSymbol = &setModeWriting;
 	setModeWriting.nextSymbol = &writeAeration;
 
-	serialCommunication(&writingAeration, 10);
+	serialCommunication(&writingAeration, 10, 0);
 }
 
 int getAeration() {

@@ -22,6 +22,6 @@ char debug[DEBUG_BUFFER_SIZE];
 int pdebug(char *string);
 int serialCommunicationInit();
 int serialCommunicationClose();
-int serialCommunication(struct symbol *command, int maxRestarts);
+int serialCommunication(struct symbol *command, int maxRestarts, char *additionalResult);
 int setAeration(int aeration);
 int getAeration();
