@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
 	int mode = MODE_READ;
 	int result = 0;
 
-	while ((opt = getopt(argc, argv, "dt:b:a:rw:h")) != -1) {
+	while ((opt = getopt(argc, argv, "dt:b:a:rw:hs")) != -1) {
 		switch (opt) {
 		case 's':
 			stty = 0;
