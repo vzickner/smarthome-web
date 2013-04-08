@@ -8,7 +8,7 @@
 #define DEBUG_BUFFER_SIZE 50
 
 #define READ_SLEEP_LENGTH 100
-#define READ_TRY_COUNT 100
+#define READ_TRY_COUNT 40
 
 struct symbol {
 	unsigned char send;
