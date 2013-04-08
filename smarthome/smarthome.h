@@ -7,6 +7,9 @@
 #define DEBUG_ENABLED
 #define DEBUG_BUFFER_SIZE 50
 
+#define READ_SLEEP_LENGTH 100
+#define READ_TRY_COUNT 100
+
 struct symbol {
 	unsigned char send;
 	unsigned char expectedResult;

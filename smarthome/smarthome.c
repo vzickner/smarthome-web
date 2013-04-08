@@ -60,11 +60,11 @@ int serialCommunication(struct symbol *command, int maxRestarts, char *additiona
 
 		resultRead = -1;
 		pdebug("Read: ");
-		for (i = 0; i < 100 && resultRead != 1; i++) {
+		for (i = 0; i < READ_TRY_COUNT && resultRead != 1; i++) {
 			resultRead = read(serial, &result, 1);
 			snprintf(debug, DEBUG_BUFFER_SIZE, "(%02x,%d) ", result, resultRead);
 			pdebug(debug);
-			usleep(100);
+			usleep(READ_SLEEP_LENGTH);
 		}
 		if (resultRead != 1) {
 			pdebug("Read Error.");
