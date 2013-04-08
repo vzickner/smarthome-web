@@ -18,6 +18,8 @@ struct symbol {
 int serial;
 int debugEnabled = 1;
 char debug[DEBUG_BUFFER_SIZE];
+char deviceName[] = "/dev/ttyUSB0";
+int baudRate = 38400;
 
 int pdebug(char *string);
 int serialCommunicationInit();

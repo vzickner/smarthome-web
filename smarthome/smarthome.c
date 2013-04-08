@@ -1,7 +1,7 @@
 #include "smarthome.h"
 
 int main(int argc, char **argv) {
-	serialCommunicationInit("/dev/ttyUSB0", 38400);
+	serialCommunicationInit(deviceName, baudRate);
 
 	setAeration(atoi(argv[1]));
 
@@ -11,8 +11,8 @@ int main(int argc, char **argv) {
 int pdebug(char *string) {
 #ifdef DEBUG_ENABLED
 	if (debugEnabled == 1) {
-		printf(string);
-		fflush(stdout);
+		fprintf(stderr, string);
+		fflush(stderr);
 	}
 #endif
 }
