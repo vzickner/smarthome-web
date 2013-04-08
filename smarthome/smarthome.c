@@ -33,24 +33,26 @@ int serialCommunicationClose() {
 	return 0;
 }
 
-int serialCommunication(struct symbol *command, int maxRestarts, char *additionalResult) {
+int serialCommunication(struct symbol *command, int maxRestarts, char *additionalReceive, int maxAdditionalReceive) {
+	int i, j;
 	int error = 0;
+
 	struct symbol *c = command;
+
 	int first = 0;
-	unsigned char send;
+	unsigned char resultCommand = 0x00;
 	unsigned char result = 0x00;
-	int i = 0;
+	int positionAdditionalReceive = 0;
 	ssize_t resultRead = -1;
 
 	do {
 		if (first == 0) first = 1;
 		else c = c->nextSymbol;
 
-		send = c->send;
 		pdebug("Write: ");
-		ssize_t res = write(serial, &send, 1);
+		ssize_t res = write(serial, &(c->send), 1);
 
-		snprintf(debug, DEBUG_BUFFER_SIZE, "%02x with result %d\n", send, res);
+		snprintf(debug, DEBUG_BUFFER_SIZE, "%02x with result %d\n", c->send, res);
 		pdebug(debug);
 		if (res != 1) {
 			pdebug("Write Error.");
@@ -58,26 +60,34 @@ int serialCommunication(struct symbol *command, int maxRestarts, char *additiona
 			break;
 		}
 
-		resultRead = -1;
-		pdebug("Read: ");
-		for (i = 0; i < READ_TRY_COUNT && resultRead != 1; i++) {
-			resultRead = read(serial, &result, 1);
-			snprintf(debug, DEBUG_BUFFER_SIZE, "(%02x,%d) ", result, resultRead);
-			pdebug(debug);
-			usleep(READ_SLEEP_LENGTH);
+		for (j = 0; j <= c->additionalReceiveCount; j++) {
+			resultRead = -1;
+			pdebug("Read: ");
+                        
+			for (i = 0; i < READ_TRY_COUNT && resultRead != 1; i++) {
+				resultRead = read(serial, &result, 1);
+				snprintf(debug, DEBUG_BUFFER_SIZE, "(%02x,%d) ", result, resultRead);
+				pdebug(debug);
+				usleep(READ_SLEEP_LENGTH);
+			}
+			if (resultRead != 1) {
+				pdebug("Read Error.");
+				error = 1;
+				break;
+			}
+			pdebug("\n");
+			result = result & 0xFF;
+			if (j == 0) {
+				resultCommand = result;
+			} else if (positionAdditionalReceive < maxAdditionalReceive) {
+				additionalReceive[positionAdditionalReceive++] = result;
+			}
 		}
-		if (resultRead != 1) {
-			pdebug("Read Error.");
-			error = 1;
-			break;
-		}
-		pdebug("\n");
-		result = result & 0xFF;
                 
-		snprintf(debug, DEBUG_BUFFER_SIZE, "Send: %02x, Expected: %02x, Result: %02x\n", send, c->expectedResult, result);
+		snprintf(debug, DEBUG_BUFFER_SIZE, "Send: %02x, Expected: %02x, Result: %02x\n", c->send, c->expectedResult, resultCommand);
 		pdebug(debug);
 
-		if (c->expectedResult != result) {
+		if (c->expectedResult != resultCommand) {
 			pdebug("Read not expected result.\n");
 			error = 1;
 			break;
@@ -86,7 +96,7 @@ int serialCommunication(struct symbol *command, int maxRestarts, char *additiona
 
 	if (error == 1 && maxRestarts > 0) {
 		pdebug("\n\nRestart:\n");
-		return serialCommunication(command, (maxRestarts-1), additionalResult);
+		return serialCommunication(command, (maxRestarts-1), additionalReceive, maxAdditionalReceive);
 	}
 }
 
@@ -99,7 +109,7 @@ int setAeration(int aeration) {
 	writingAeration.nextSymbol = &setModeWriting;
 	setModeWriting.nextSymbol = &writeAeration;
 
-	serialCommunication(&writingAeration, 10, 0);
+	serialCommunication(&writingAeration, 10, 0, 0);
 }
 
 int getAeration() {

@@ -27,6 +27,6 @@ int baudRate = 38400;
 int pdebug(char *string);
 int serialCommunicationInit();
 int serialCommunicationClose();
-int serialCommunication(struct symbol *command, int maxRestarts, char *additionalResult);
+int serialCommunication(struct symbol *command, int maxRestarts, char *additionalReceive, int maxAdditionalReceive);
 int setAeration(int aeration);
 int getAeration();
